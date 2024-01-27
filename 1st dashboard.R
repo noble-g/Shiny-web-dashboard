@@ -24,30 +24,38 @@ head(data)
 min(data$Sepal.Length)
 ### UI Function
 ui <- fluidPage(theme = shinytheme("united"),
-                titlePanel("Iris Analysis"),
-                sidebarLayout(sidebarPanel(sliderInput("SLrange", "Sepal Length Range ", min = min(data$Sepal.Length), max = max(data$Sepal.Length), value = c(4.4,6.55) ),
-                                           sliderInput("SWrange", "Sepal Width Range ", min = min(data$Sepal.Width), max = max(data$Sepal.Width), value = c(3,4) ),
-                                           sliderInput("PLrange", "Petal Length Range ", min = min(data$Petal.Length), max = max(data$Petal.Length), value = c(4,5) ),
-                                           sliderInput("PWrange", "Petal Width Range ", min = min(data$Petal.Width), max = max(data$Petal.Width), value = c(1,2) )
-                ),
-                              mainPanel(
-                                h2(tags$b("About The Data")),
-                                h3("Description"),
-                                p("This famous (Fisher's or Anderson's) iris data set gives the measurements in centimeters of the variables sepal length 
+                navbarPage("Iris Analysis", 
+                           tabPanel("Iris Description", 
+                                    sidebarLayout(sidebarPanel(sliderInput("SLrange", "Sepal Length Range ", min = min(data$Sepal.Length), max = max(data$Sepal.Length), value = c(4.4,6.55) ),
+                                                               sliderInput("SWrange", "Sepal Width Range ", min = min(data$Sepal.Width), max = max(data$Sepal.Width), value = c(3,4) ),
+                                                               sliderInput("PLrange", "Petal Length Range ", min = min(data$Petal.Length), max = max(data$Petal.Length), value = c(4,5) ),
+                                                               sliderInput("PWrange", "Petal Width Range ", min = min(data$Petal.Width), max = max(data$Petal.Width), value = c(1,2) )
+                                    ),
+                                    mainPanel(
+                                      h2(tags$b("About The Data")),
+                                      h3("Description"),
+                                      p("This famous (Fisher's or Anderson's) iris data set gives the measurements in centimeters of the variables sepal length 
                                   and width and petal length and width, respectively, for 50 flowers from each of 3 species of iris. The species are Iris setosa, versicolor,
                                   and virginica."),
-                                h3("Format"),
-                                p("iris is a data frame with 150 cases (rows) and 5 variables (columns) named Sepal.Length, Sepal.Width, Petal.Length, Petal.Width, and Species."),
-                                ## Data Table
-                                DT::dataTableOutput("table"),
-                                h3("References"),
-                                tags$ul("Fisher, R. A. (1936) The use of multiple measurements in taxonomic problems. Annals of Eugenics, 7, Part II, 179–188.", 
-                                        "The data were collected by Anderson, Edgar (1935). The irises of the Gaspe Peninsula, Bulletin of the American Iris Society, 59, 2–5.")
-                                )
-                              )
+                                      h3("Format"),
+                                      p("iris is a data frame with 150 cases (rows) and 5 variables (columns) named Sepal.Length, Sepal.Width, Petal.Length, Petal.Width, and Species."),
+                                      ## Data Table
+                                      DT::dataTableOutput("table"),
+                                      h3("References"),
+                                      tags$ul("Fisher, R. A. (1936) The use of multiple measurements in taxonomic problems. Annals of Eugenics, 7, Part II, 179–188.", 
+                                              "The data were collected by Anderson, Edgar (1935). The irises of the Gaspe Peninsula, Bulletin of the American Iris Society, 59, 2–5.")
+                                    )
+                                    )
+                                    ),
+                           tabPanel("Dashboard", "intentionally left blank"),
+                           tabPanel("Prediction", "intentionally left blank"),
+                           tabPanel("Model Diagonistics", "intentionally left blank")),
+                
                 )
 
-
+??navbarPage()
+                
+                
 ### Server function
 server <- function(input, output) {
   # Reactive filtering of the iris dataset based on slider values
