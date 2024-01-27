@@ -47,8 +47,34 @@ ui <- fluidPage(theme = shinytheme("united"),
                                     )
                                     )
                                     ),
-                           tabPanel("Dashboard", "intentionally left blank"),
-                           tabPanel("Prediction", "intentionally left blank"),
+                           tabPanel("Dashboard", 
+                                    sidebarLayout(sidebarPanel(sliderInput("SLrange", "Sepal Length Range ", min = min(data$Sepal.Length), max = max(data$Sepal.Length), value = c(4.4,6.55)),
+                                                               sliderInput("SWrange", "Sepal Width Range ", min = min(data$Sepal.Width), max = max(data$Sepal.Width), value = c(3,4)),
+                                                               sliderInput("PLrange", "Petal Length Range ", min = min(data$Petal.Length), max = max(data$Petal.Length), value = c(4,5)),
+                                                               sliderInput("PWrange", "Petal Width Range ", min = min(data$Petal.Width), max = max(data$Petal.Width), value = c(1,2)),
+                                                               actionButton("Predict", "Predict", class = "btn btn-primary")
+                                    ),
+                                    mainPanel(
+                                      p("the Dashboard Goes Here")
+                                    )
+                                    )),
+                           tabPanel("Prediction", 
+                                    sidebarLayout(sidebarPanel(sliderInput("SLrange", "Sepal Length Range ", min = min(data$Sepal.Length), max = max(data$Sepal.Length), value = 6.55),
+                                                               sliderInput("SWrange", "Sepal Width Range ", min = min(data$Sepal.Width), max = max(data$Sepal.Width), value = 4),
+                                                               sliderInput("PLrange", "Petal Length Range ", min = min(data$Petal.Length), max = max(data$Petal.Length), value = 5),
+                                                               sliderInput("PWrange", "Petal Width Range ", min = min(data$Petal.Width), max = max(data$Petal.Width), value = 2)
+                                    ),
+                                    mainPanel(
+                                      h2(tags$b("Predict The Data")),
+                                      p("Here you choose the data for the four independent variables - ..., and predict the "),
+                                      h3("Logistics Regression"),
+                                      h3("Random Forest"),
+                                      
+                                      ## Model
+                                      
+                                    )
+                                    )
+                                    ),
                            tabPanel("Model Diagonistics", "intentionally left blank")),
                 
                 )
@@ -110,6 +136,24 @@ cat("Logistic Regression Accuracy:", lr_accuracy, "\n")
 cat("Random Forest Accuracy:", rf_accuracy, "\n")
 
 ## Live prediction of one row
+
+data[1, -5] ## live independent variables
+data[1,] ## live data (dependent var inclusive)
+# Live data frame creation
+live_data <- data.frame(
+  Sepal.Length = 5.1,
+  Sepal.Width = 3.5,
+  Petal.Length = 1.4,
+  Petal.Width = 0.2
+)
+
+lr_pred <- predict(lr_model, newdata = live_data, type = "raw")
+rf_pred <- predict(rf_model, newdata = live_data, type = "raw")
+# Print the predictions
+print(as.character(lr_pred[1]))
+print(rf_pred)
+
+
 ## confusion matrix and its derivatives - accuracy, loss fn, ...
 ## Model Diagonistivcs
 ## AUC and ROC curve
