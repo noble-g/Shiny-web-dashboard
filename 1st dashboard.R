@@ -80,21 +80,35 @@ trainData <- data[trainIndex, ]
 testData <- data[-trainIndex, ]
 
 ## Logistics Reg
-logistic_model <- train(Species ~ ., data = trainData, method = "glm")#, trControl = trainControl(method = "cv", number = 5))
-logistic_pred <- predict(logistic_model, newdata = testData)
-logistic_accuracy <- confusionMatrix(logistic_pred, testData$Species)$overall['Accuracy']
+lr_model <- train(Species ~ ., data = trainData, method = "multinom", family = "binomial", 
+                  trControl = trainControl(method = "cv", number = 5), 
+                  control = glm.control(maxit = 1000),
+                  preProcess = c("center", "scale"))
+# Since LR is a binary classifier and the data has a response categorical var of three levels not 2
+# LR cannot be directly applied to a multiclass classification problem like the iris dataset
+# in the above LR model, the one vs rest (OvR) approach was implemented with the 
+## ... `multinom` method where separate binary logistics reg models are trained for...
+# ... for each class versus the other classes.
+lr_pred <- predict(lr_model, newdata = testData)
+lr_accuracy <- confusionMatrix(lr_pred, testData$Species)$overall['Accuracy']
 
 ## Random Forest
 rf_model <- train(Species ~ ., data = trainData, method = "rf", trControl = trainControl(method = "cv", number = 5))
 rf_pred <- predict(rf_model, newdata = testData)
 rf_accuracy <- confusionMatrix(rf_pred, testData$Species)$overall['Accuracy']
 
-
-
-# Print the accuracies of both models
-cat("Logistic Regression Accuracy:", logistic_accuracy, "\n")
+# Print the acc. of both models
+cat("Logistic Regression Accuracy:", lr_accuracy, "\n")
 cat("Random Forest Accuracy:", rf_accuracy, "\n")
 
+## Live prediction of one row
+## confusion matrix and its derivatives - accuracy, loss fn, ...
+## Model Diagonistivcs
+## AUC and ROC curve
+## comparing the two models
+## Ensembling the two models
+## 
+##
 
 
 ### Deployment
