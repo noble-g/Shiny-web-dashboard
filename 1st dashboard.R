@@ -22,6 +22,36 @@ head(data)
 # The data were collected by Anderson, Edgar (1935). The irises of the Gaspe Peninsula, Bulletin of the American Iris Society, 59, 2–5.
 
 min(data$Sepal.Length)
+
+#######################
+# Load Models
+#####################
+lr_model = readRDS("C:/Users/USER/Desktop/GitHub/Shiny-web-dashboard/rf_model.rds")
+rf_model = readRDS("C:/Users/USER/Desktop/GitHub/Shiny-web-dashboard/rf_model.rds")
+
+## Live prediction of one row
+
+data[1, -5] ## live independent variables
+data[1,] ## live data (dependent var inclusive)
+# Live data frame creation
+live_data <- data.frame(
+  Sepal.Length = 5.1,
+  Sepal.Width = 3.5,
+  Petal.Length = 1.4,
+  Petal.Width = 0.2
+)
+
+list_data = list(5.1,3.5,1.4,0.2)
+
+lr_pred <- predict(lr_model, newdata = live_data, type = "raw")
+rf_pred <- predict(rf_model, newdata = live_data, type = "raw")
+# Print the predictions
+print(as.character(lr_pred[1]))
+print(rf_pred)
+
+
+
+
 ### UI Function
 ui <- fluidPage(theme = shinytheme("united"),
                 navbarPage("Iris Analysis", 
@@ -62,16 +92,16 @@ ui <- fluidPage(theme = shinytheme("united"),
                                     sidebarLayout(sidebarPanel(sliderInput("SLrange", "Sepal Length Range ", min = min(data$Sepal.Length), max = max(data$Sepal.Length), value = 6.55),
                                                                sliderInput("SWrange", "Sepal Width Range ", min = min(data$Sepal.Width), max = max(data$Sepal.Width), value = 4),
                                                                sliderInput("PLrange", "Petal Length Range ", min = min(data$Petal.Length), max = max(data$Petal.Length), value = 5),
-                                                               sliderInput("PWrange", "Petal Width Range ", min = min(data$Petal.Width), max = max(data$Petal.Width), value = 2)
+                                                               sliderInput("PWrange", "Petal Width Range ", min = min(data$Petal.Width), max = max(data$Petal.Width), value = 2),
+                                                               actionButton("Predict", "Predict", class = "btn btn-primary")
                                     ),
                                     mainPanel(
                                       h2(tags$b("Predict The Data")),
                                       p("Here you choose the data for the four independent variables - ..., and predict the "),
                                       h3("Logistics Regression"),
                                       h3("Random Forest"),
-                                      
                                       ## Model
-                                      
+                                      tableOutput('tabledata') #Prediction of the result table
                                     )
                                     )
                                     ),
@@ -79,12 +109,13 @@ ui <- fluidPage(theme = shinytheme("united"),
                 
                 )
 
-??navbarPage()
+
                 
                 
 ### Server function
-server <- function(input, output) {
-  # Reactive filtering of the iris dataset based on slider values
+server <- function(input, output, session) {
+    ## INPUT DATA
+    # Reactive filtering of the iris dataset based on slider values
   filtered_data <- reactive({
     subset(data,
            Sepal.Length >= input$SLrange[1] & Sepal.Length <= input$SLrange[2] &
@@ -94,64 +125,62 @@ server <- function(input, output) {
     )
   })
   
+  ## OUTPUT DATA
+  ## the Data Description Page
   # Render the filtered data table
   output$table <- renderDT({
     datatable(filtered_data(), options = list(pageLength = 20))
   })
+  
+  #### Live data on the web app model prediction page
+  live_data <- reactive({
+    
+    df<- data.frame(
+    Sepal.Length = input$SLrange[2],
+    Sepal.Width = input$SWrange[2],
+    Petal.Length = input$PLrange[2],
+    Petal.Width = input$PWrange[2]
+  )
+  })
+  ###
+  Species <- 0
+  df <- rbind(df, Species)
+  df_input<- transpose(df)
+  write.table(df_input, "input.csv", sep = ",", quote = FALSE, row.names = FALSE, col.names = FALSE)
+  
+  test<- read.csv(paste("input", ".csv", sep=""), header = TRUE)
+  
+  Output <- data.frame(Prediction=predict(rf_model,test), round(predict(rf_model,test,type="prob"), 3))
+  print(Output)
+
+  
+  
+  ## The Model Page
+  output$contents <- renderPrint({
+    if (input$Predict>0) { 
+      isolate("Your Prediction is Now Ready 🤩😎") 
+    } else {
+      return("Server 🛰 is ready to predict")
+    }
+  })
+  
+  
+  # Prediction results table
+  output$tabledata <- renderTable({
+    if (input$Predict>0) { 
+      isolate(live_data()) 
+    } 
+  })
+  
+  
 }
 
 
 ## Shiny app function
-shinyApp(ui, server)
+shinyApp(ui = ui, server = server)
 
 names(tags)
 
-### Modelling
-set.seed(42) # for reproducibility
-## Train - Test Split
-trainIndex <- createDataPartition(iris$Species, p = 0.7, list = FALSE)
-trainData <- data[trainIndex, ]
-testData <- data[-trainIndex, ]
-
-## Logistics Reg
-lr_model <- train(Species ~ ., data = trainData, method = "multinom", family = "binomial", 
-                  trControl = trainControl(method = "cv", number = 5), 
-                  control = glm.control(maxit = 1000),
-                  preProcess = c("center", "scale"))
-# Since LR is a binary classifier and the data has a response categorical var of three levels not 2
-# LR cannot be directly applied to a multiclass classification problem like the iris dataset
-# in the above LR model, the one vs rest (OvR) approach was implemented with the 
-## ... `multinom` method where separate binary logistics reg models are trained for...
-# ... for each class versus the other classes.
-lr_pred <- predict(lr_model, newdata = testData)
-lr_accuracy <- confusionMatrix(lr_pred, testData$Species)$overall['Accuracy']
-
-## Random Forest
-rf_model <- train(Species ~ ., data = trainData, method = "rf", trControl = trainControl(method = "cv", number = 5))
-rf_pred <- predict(rf_model, newdata = testData)
-rf_accuracy <- confusionMatrix(rf_pred, testData$Species)$overall['Accuracy']
-
-# Print the acc. of both models
-cat("Logistic Regression Accuracy:", lr_accuracy, "\n")
-cat("Random Forest Accuracy:", rf_accuracy, "\n")
-
-## Live prediction of one row
-
-data[1, -5] ## live independent variables
-data[1,] ## live data (dependent var inclusive)
-# Live data frame creation
-live_data <- data.frame(
-  Sepal.Length = 5.1,
-  Sepal.Width = 3.5,
-  Petal.Length = 1.4,
-  Petal.Width = 0.2
-)
-
-lr_pred <- predict(lr_model, newdata = live_data, type = "raw")
-rf_pred <- predict(rf_model, newdata = live_data, type = "raw")
-# Print the predictions
-print(as.character(lr_pred[1]))
-print(rf_pred)
 
 
 ## confusion matrix and its derivatives - accuracy, loss fn, ...
