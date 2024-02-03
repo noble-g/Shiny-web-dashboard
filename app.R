@@ -1,14 +1,23 @@
 ## install pkgs
-#install.packages("DT")
-
+#install.packages("randomForest")
+#install.packages("corrplot")  # Install the corrplot package if you haven't already
+#library(remotes)
+#install.packages("caret")
+#install.packages("htmltools")
+#remotes::install_github("rstudio/htmltools")
+#packageVersion("htmltools")
 
 ### import Libraries
 library(shiny)
 library(shinythemes)
 library(shinydashboard)
 library(DT)
+library(corrplot)
 library(caret)
 library(randomForest)
+library(bslib)
+library(bsicons)
+
 
 ##Load The data
 #### By default, iris is in R
@@ -53,15 +62,18 @@ rf_pred <- predict(rf_model, newdata = live_data, type = "raw")
 
 
 ### UI Function
-ui <- fluidPage(theme = shinytheme("darkly"),
+ui <- fluidPage(theme = bs_theme(bootswatch = "darkly", 
+                                 success = "#95dc4e",
+                                 primary = "#f3b433",
+                                 secondary = "#e5e5e5",
+                                 warning = "#33df89"),
                 navbarPage("Iris Analysis", 
                            tabPanel("Iris Description", 
-                                    sidebarLayout(sidebarPanel(sliderInput("SLrange", "Sepal Length Range ", min = min(data$Sepal.Length), max = max(data$Sepal.Length), value = c(4.4,6.55) ),
+                                    page_sidebar(sidebar=  sidebar(sliderInput("SLrange", "Sepal Length Range ", min = min(data$Sepal.Length), max = max(data$Sepal.Length), value = c(4.4,6.55) ),
                                                                sliderInput("SWrange", "Sepal Width Range ", min = min(data$Sepal.Width), max = max(data$Sepal.Width), value = c(3,4) ),
                                                                sliderInput("PLrange", "Petal Length Range ", min = min(data$Petal.Length), max = max(data$Petal.Length), value = c(4,5) ),
                                                                sliderInput("PWrange", "Petal Width Range ", min = min(data$Petal.Width), max = max(data$Petal.Width), value = c(1,2) )
                                     ),
-                                    mainPanel(
                                       h2(tags$b("About The Data")),
                                       h3("Description"),
                                       p("This famous (Fisher's or Anderson's) iris data set gives the measurements in centimeters of the variables sepal length 
@@ -75,75 +87,62 @@ ui <- fluidPage(theme = shinytheme("darkly"),
                                       h3("References"),
                                       tags$ul("Fisher, R. A. (1936) The use of multiple measurements in taxonomic problems. Annals of Eugenics, 7, Part II, 179–188.", 
                                               "The data were collected by Anderson, Edgar (1935). The irises of the Gaspe Peninsula, Bulletin of the American Iris Society, 59, 2–5.")
-                                    )
-                                    )## close sidebar layout
+                                    
+                                    )## close sidebar
                                     ), ## close tabpanel
                            tabPanel("Dashboard", 
-                                    sidebarLayout(sidebarPanel(sliderInput("SLdash", "Sepal Length Range ", min = min(data$Sepal.Length), max = max(data$Sepal.Length), value = c(4.4,6.55)),
+                                    page_sidebar(title = "Iris DashBoard",
+                                                 sidebar = sidebar(sliderInput("SLdash", "Sepal Length Range ", min = min(data$Sepal.Length), max = max(data$Sepal.Length), value = c(4.4,6.55)),
                                                                sliderInput("SWdash", "Sepal Width Range ", min = min(data$Sepal.Width), max = max(data$Sepal.Width), value = c(3,4)),
                                                                sliderInput("PLdash", "Petal Length Range ", min = min(data$Petal.Length), max = max(data$Petal.Length), value = c(4,5)),
                                                                sliderInput("PWdash", "Petal Width Range ", min = min(data$Petal.Width), max = max(data$Petal.Width), value = c(1,2)),
                                                                actionButton("Predict", "Predict", class = "btn btn-primary")  
                                                                ),
-                                    mainPanel(
-                                      tabsetPanel(
-                                        tabPanel("DashBoard",
-                                      dashboardPage(
-                                        dashboardHeader(),
-                                        dashboardSidebar(),
-                                      dashboardBody(
-                                        fluidRow( #### The average cards
-                                          box(
-                                            title = "Sepal Length Mean", verbatimTextOutput("sepal_length_mean")
-                                          ),
-                                          box(
-                                            title = "Sepal Width Mean", verbatimTextOutput("sepal_width_mean")
-                                          ),
-                                          box(
-                                            title = "Petal Length Mean", verbatimTextOutput("petal_length_mean")
-                                          ),
-                                          box(
-                                            title = "Petal Width Mean", verbatimTextOutput("petal_width_mean")
-                                          )
-                                        ),
-                                        fluidRow( #### The Scatter Plots
-                                          box(
-                                            title = "Sepal Length vs Sepal Width", plotOutput("scatter_plot_sepal")
-                                          ),
-                                          box(
-                                            title = "Petal Length vs Petal Width", plotOutput("scatter_plot_petal")
-                                          )
-                                        ),
-                                        fluidRow( #### The correlation plot and Box plot
-                                          box(
-                                            title = "Correlation Plot", plotOutput("correlation_plot")
-                                          ),
-                                          box(
-                                            title = "Boxplot", plotOutput("boxplot")
-                                          )
-                                        ),
-                                        fluidRow( #### The Report
-                                          box(
-                                            title = "Findings", verbatimTextOutput("findings")
-                                          )
+                                        #### The average cards
+                                        layout_columns(
+                                          value_box(title = "Sepal Length Mean", 
+                                                    verbatimTextOutput("sepal_length_mean"),
+                                                    theme = "success"),
+                                          value_box(title = "Sepal Width Mean", 
+                                                    verbatimTextOutput("sepal_width_mean"),
+                                                    theme = "secondary"),
+                                          value_box(title = "Petal Length Mean", 
+                                                    verbatimTextOutput("petal_length_mean"),
+                                                    theme = "primary"),
+                                          value_box(title = "Petal Width Mean", 
+                                                    verbatimTextOutput("petal_width_mean"),
+                                                    theme = "warning"),
+                                        #### The Scatter Plots
+                                          card(card_header("Sepal Length vs Sepal Width"), 
+                                               plotOutput("scatter_plot_sepal")),
+                                          card(card_header("Petal Length vs Petal Width"),
+                                              plotOutput("scatter_plot_petal")),
+                                        #### The correlation plot and Box plot
+                                          card(card_header("Correlation Plot"), 
+                                                         plotOutput("correlation_plot")),
+                                          card(card_header("Boxplot"), 
+                                                           plotOutput("boxplot")),
+                                        #### The Report
+                                        card(card_header("Findings"), 
+                                                         verbatimTextOutput("findings")),
+                                        col_widths = c(3,3,3,3,6,6,4,8, 12),
+                                        row_heights = c(0.7, 3,3,3)
                                         )
-                                    )
-                                    )))))),
+                                    )),
                            tabPanel("Prediction", 
-                                    sidebarLayout(sidebarPanel(sliderInput("SLpoint", "Sepal Length", min = min(data$Sepal.Length), max = max(data$Sepal.Length), value = 6.55),
+                                    page_sidebar(sidebar = sidebar(sliderInput("SLpoint", "Sepal Length", min = min(data$Sepal.Length), max = max(data$Sepal.Length), value = 6.55),
                                                                sliderInput("SWpoint", "Sepal Width", min = min(data$Sepal.Width), max = max(data$Sepal.Width), value = 4),
                                                                sliderInput("PLpoint", "Petal Length", min = min(data$Petal.Length), max = max(data$Petal.Length), value = 5),
                                                                sliderInput("PWpoint", "Petal Width", min = min(data$Petal.Width), max = max(data$Petal.Width), value = 2),
                                                                actionButton("PredictPredict", "Predict", class = "btn btn-primary")
                                     ),
-                                    mainPanel(
                                       h2(tags$b("Predict The Data")),
                                       p("Here you choose the data for the four independent variables - ..., and predict the "),
                                       h3("Logistics Regression"),
                                       h3("Random Forest"),
                                       ## Model
                                       tableOutput('tabledata') #Prediction of the result table
-                                    ))),
+                                    )),
                            tabPanel("Model Diagonistics", "intentionally left blank")),
                 )
 
