@@ -2,7 +2,7 @@
 #install.packages("randomForest")
 #install.packages("corrplot")  # Install the corrplot package if you haven't already
 #library(remotes)
-#install.packages("caret")
+#install.packages("thematic")
 #install.packages("htmltools")
 #remotes::install_github("rstudio/htmltools")
 #packageVersion("htmltools")
@@ -17,7 +17,11 @@ library(caret)
 library(randomForest)
 library(bslib)
 library(bsicons)
+library(thematic)
 
+
+#Declare the themw of the dash
+#thematic()
 
 ##Load The data
 #### By default, iris is in R
@@ -137,13 +141,50 @@ ui <- fluidPage(theme = bs_theme(bootswatch = "darkly",
                                                                actionButton("PredictPredict", "Predict", class = "btn btn-primary")
                                     ),
                                       h2(tags$b("Predict The Data")),
+                                      tableOutput("live_table"),
                                       p("Here you choose the data for the four independent variables - ..., and predict the "),
                                       h3("Logistics Regression"),
+                                      tableOutput("prediction_table"),
                                       h3("Random Forest"),
                                       ## Model
                                       tableOutput('tabledata') #Prediction of the result table
                                     )),
-                           tabPanel("Model Diagonistics", "intentionally left blank")),
+                           tabPanel("Model Diagonistics",
+                                    #page_fil("Evaluation and Diagonistis",
+                                      layout_columns(
+                                        ## Logistics Regression
+                                        tags$h2("Evaluating The Logistics Regression Model"),
+                                        card("Logistic regression is a statistical method used for binary classification, which means it predicts the probability of occurrence of an event by fitting data to a logistic function. It's commonly used when the dependent variable is binary (i.e., it takes only two possible outcomes).\n
+                                             Logistic regression models the probability that a given input belongs to a particular class. The output of logistic regression is transformed using the sigmoid function (also known as the logistic function), which ensures that the output value falls between 0 and 1. The sigmoid function is defined as: \n
+                                             During the training phase, logistic regression learns the relationship between the input features and the binary outcome by estimating the coefficients (weights) that minimize the error between the predicted probabilities and the actual outcomes in the training data. \n,
+                                              Logistic regression uses a cost function called the log loss (or cross-entropy) function to measure the error between the predicted probabilities and the true labels. The goal is to minimize this error using optimization algorithms like gradient descent. \n
+                                             Once the model is trained, it can be used to predict the probability that a new instance belongs to the positive class (usually labeled as 1). A decision boundary is set at a threshold value (typically 0.5), and instances with predicted probabilities above this threshold are classified as positive, while those below are classified as negative. \n
+                                             Logistic regression is widely used in various fields such as healthcare, finance, marketing, and social sciences due to its simplicity, interpretability, and effectiveness for binary classification tasks. However, it's important to note that logistic regression assumes a linear relationship between the input features and the log odds of the outcome."),
+                                        # Confusion matrix
+                                        card(card_header()),
+                                        card(),
+                                        # Accuracy
+                                        card(card_header()),
+                                        card(),
+                                        # AUC and ROC curve
+                                        card(card_header()),
+                                        card(),
+                                        ## Random Forest
+                                        tags$h2("Evaluating The Random Forest Model"),
+                                        card(),
+                                        # Feature importance
+                                        card(card_header()),
+                                        card(),
+                                        # Confusion Matrix
+                                        card(card_header()),
+                                        card(),
+                                        # Cross Validation
+                                        card(card_header()),
+                                        card(),
+                                        col_widths = c(12, 12,6,6,6,6,6,6,12, 12,6,6,6,6,6,6),
+                                        row_heights = c(0.7, 3,3,3)
+                                      )
+                                    )),
                 )
 
 
@@ -179,7 +220,36 @@ server <- function(input, output, session) {
     Sepal.Width = input$SWpoint,
     Petal.Length = input$PLpoint,
     Petal.Width = input$PWpoint)
+    return(df)
   })
+  output$live_table <- renderTable({
+    live_data()
+  })
+  
+  
+  #print(class(df))
+  #print(class(df$Sepal.Length))
+  
+  lr_df <- reactive({
+  # Predict on the dataframe
+  lr_pred <- predict(lr_model, newdata = live_data(), type = "raw")
+  lr_prob <- predict(lr_model, newdata = live_data(), type = "prob")
+  
+  # Combine predictions and probabilities into a dataframe
+  result <- data.frame(
+    Prediction = as.character(lr_pred[1]),
+    Setosa_Prob = lr_prob[, "setosa"],
+    Versicolor_Probability = lr_prob[, "versicolor"],
+    Virginica_Probability = lr_prob[, "virginica"]
+  )
+  })
+  # Output the result dataframe
+  output$prediction_table <- renderTable({
+    lr_df()
+  })
+  
+  
+  
   
   ###
   observeEvent(input$PredictPredict, {

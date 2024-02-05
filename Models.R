@@ -22,10 +22,37 @@ lr_model <- train(Species ~ ., data = trainData, method = "multinom", family = "
 lr_pred <- predict(lr_model, newdata = testData)
 lr_accuracy <- confusionMatrix(lr_pred, testData$Species)$overall['Accuracy']
 
+##Logistics regression model evaluation
+# CM
+predictions <- predict(lr_model, testData)
+confusionMatrix(predictions, testData$Species)
+## accuracy
+accuracy_train <- sum(predictions == trainData$Species) / length(trainData$Species)
+accuracy_train
+# Cross-Validation Results
+lr_model$results
+
+
+
+
 ## Random Forest
 rf_model <- train(Species ~ ., data = trainData, method = "rf", trControl = trainControl(method = "cv", number = 5))
 rf_pred <- predict(rf_model, newdata = testData)
 rf_accuracy <- confusionMatrix(rf_pred, testData$Species)$overall['Accuracy']
+
+## Evaluation of RF Model
+# 1. Feature Importance
+varImp(rf_model)
+
+# 2. Evaluate Model Performance
+predictions <- predict(rf_model, testData)
+confusionMatrix(predictions, testData$Species)
+
+# 3. Cross-Validation Results
+rf_model$results
+
+
+
 
 # Print the acc. of both models
 cat("Logistic Regression Accuracy:", lr_accuracy, "\n")
@@ -46,6 +73,9 @@ live_data <- data.frame(
   Petal.Length = 1.4,
   Petal.Width = 0.2
 )
+
+print(class(live_data))
+print(class(live_data$Sepal.Length))
 
 lr_pred <- predict(lr_model, newdata = live_data, type = "raw")
 rf_pred <- predict(rf_model, newdata = live_data, type = "raw")
