@@ -83,7 +83,7 @@ ui <- fluidPage(theme = bs_theme(bootswatch = "darkly",
                                       p("This famous (Fisher's or Anderson's) iris data set gives the measurements in centimeters of the variables sepal length 
                                   and width and petal length and width, respectively, for 50 flowers from each of 3 species of iris. The species are Iris setosa, versicolor,
                                   and virginica."),
-                                      h3("Format"),
+                                      h3("Structure of The Data"),
                                       tags$pre(verbatimTextOutput("data_structure")), ## to print the structure of the data
                                       p("iris is a data frame with 150 cases (rows) and 5 variables (columns) named Sepal.Length, Sepal.Width, Petal.Length, Petal.Width, and Species."),
                                       ## Data Table
@@ -95,13 +95,8 @@ ui <- fluidPage(theme = bs_theme(bootswatch = "darkly",
                                     )## close sidebar
                                     ), ## close tabpanel
                            tabPanel("Dashboard", 
-                                    page_sidebar(title = "Iris DashBoard",
-                                                 sidebar = sidebar(sliderInput("SLdash", "Sepal Length Range ", min = min(data$Sepal.Length), max = max(data$Sepal.Length), value = c(4.4,6.55)),
-                                                               sliderInput("SWdash", "Sepal Width Range ", min = min(data$Sepal.Width), max = max(data$Sepal.Width), value = c(3,4)),
-                                                               sliderInput("PLdash", "Petal Length Range ", min = min(data$Petal.Length), max = max(data$Petal.Length), value = c(4,5)),
-                                                               sliderInput("PWdash", "Petal Width Range ", min = min(data$Petal.Width), max = max(data$Petal.Width), value = c(1,2)),
-                                                               actionButton("Predict", "Predict", class = "btn btn-primary")  
-                                                               ),
+                                    page(card(tags$h2("IRIS DASHBOARD", 
+                                                      style = "font-weight: bold; font-style: italic; text-align: center;")),
                                         #### The average cards
                                         layout_columns(
                                           value_box(title = "Sepal Length Mean", 
@@ -127,7 +122,7 @@ ui <- fluidPage(theme = bs_theme(bootswatch = "darkly",
                                           card(card_header("Boxplot"), 
                                                            plotOutput("boxplot")),
                                         #### The Report
-                                        card(card_header("Findings"), 
+                                        card(card_header("Report"), 
                                                          verbatimTextOutput("findings")),
                                         col_widths = c(3,3,3,3,6,6,4,8, 12),
                                         row_heights = c(0.7, 3,3,3)
@@ -138,16 +133,17 @@ ui <- fluidPage(theme = bs_theme(bootswatch = "darkly",
                                                                sliderInput("SWpoint", "Sepal Width", min = min(data$Sepal.Width), max = max(data$Sepal.Width), value = 4),
                                                                sliderInput("PLpoint", "Petal Length", min = min(data$Petal.Length), max = max(data$Petal.Length), value = 5),
                                                                sliderInput("PWpoint", "Petal Width", min = min(data$Petal.Width), max = max(data$Petal.Width), value = 2),
-                                                               actionButton("PredictPredict", "Predict", class = "btn btn-primary")
+                                                               actionButton("Predict", "Predict", class = "btn btn-primary")
                                     ),
                                       h2(tags$b("Predict The Data")),
                                       tableOutput("live_table"),
                                       p("Here you choose the data for the four independent variables - ..., and predict the "),
                                       h3("Logistics Regression"),
-                                      tableOutput("prediction_table"),
+                                      textOutput("content"),
+                                      tableOutput("lr_table"),
                                       h3("Random Forest"),
                                       ## Model
-                                      tableOutput('tabledata') #Prediction of the result table
+                                      tableOutput('rf_table') #Prediction of the result table
                                     )),
                            tabPanel("Model Diagonistics",
                                     #page_fil("Evaluation and Diagonistis",
@@ -192,11 +188,13 @@ ui <- fluidPage(theme = bs_theme(bootswatch = "darkly",
                 
 ### Server function
 server <- function(input, output, session) {
+  
+  ## the Data Description Page
+  
+  # The structure of the data
   output$data_structure <- renderPrint({
     str(data)
   })
-  
-    ## INPUT DATA
     # Reactive filtering of the iris dataset based on slider values
   filtered_data <- reactive({
     subset(data,
@@ -206,78 +204,9 @@ server <- function(input, output, session) {
              Petal.Width >= input$PWrange[1] & Petal.Width <= input$PWrange[2]
     )
   })
-  ## OUTPUT DATA
-  ## the Data Description Page
   # Render the filtered data table
   output$table <- renderDT({
     datatable(filtered_data(), options = list(pageLength = 20))
-  })
-  
-  #### Live data on the web app model prediction page
-  live_data <- reactive({
-    df<- data.frame(
-    Sepal.Length = input$SLpoint,
-    Sepal.Width = input$SWpoint,
-    Petal.Length = input$PLpoint,
-    Petal.Width = input$PWpoint)
-    return(df)
-  })
-  output$live_table <- renderTable({
-    live_data()
-  })
-  
-  
-  #print(class(df))
-  #print(class(df$Sepal.Length))
-  
-  lr_df <- reactive({
-  # Predict on the dataframe
-  lr_pred <- predict(lr_model, newdata = live_data(), type = "raw")
-  lr_prob <- predict(lr_model, newdata = live_data(), type = "prob")
-  
-  # Combine predictions and probabilities into a dataframe
-  result <- data.frame(
-    Prediction = as.character(lr_pred[1]),
-    Setosa_Prob = lr_prob[, "setosa"],
-    Versicolor_Probability = lr_prob[, "versicolor"],
-    Virginica_Probability = lr_prob[, "virginica"]
-  )
-  })
-  # Output the result dataframe
-  output$prediction_table <- renderTable({
-    lr_df()
-  })
-  
-  
-  
-  
-  ###
-  observeEvent(input$PredictPredict, {
-    new_row <- c(Species = 0)
-    df <- rbind(live_data(), new_row)
-    df_input <- as.data.frame(t(df))
-    write.table(df_input, "input.csv", sep = ",", quote = FALSE, row.names = FALSE, col.names = FALSE)
-    
-    test <- read.csv("input.csv", header = TRUE)
-    
-    Output <- data.frame(Prediction = predict(rf_model, test), round(predict(rf_model, test, type = "prob"), 3))
-    print(Output)
-  })
-  
-  # The Model Page
-  output$contents <- renderPrint({
-    if (input$Predict > 0) { 
-      "Your Prediction is Now Ready 🤩😎"
-    } else {
-      "Server 🛰 is ready to predict"
-    }
-  })
-  
-  # Prediction results table
-  output$tabledata <- renderTable({
-    if (input$Predict > 0) { 
-      live_data()
-    }
   })
   
   ##### DASHBOARD
@@ -324,7 +253,6 @@ server <- function(input, output, session) {
   
   # Generate Report
   output$findings <- renderPrint({
-    cat("Findings:\n")
     cat("1. Sepal Length has a mean value of", round(mean(data$Sepal.Length), 2), "\n")
     cat("2. Sepal Width has a mean value of", round(mean(data$Sepal.Width), 2), "\n")
     cat("3. Petal Length has a mean value of", round(mean(data$Petal.Length), 2), "\n")
@@ -336,6 +264,108 @@ server <- function(input, output, session) {
     cat("9. There are some outliers present in Petal Length and Petal Width.\n")
     cat("10. The data appears to be normally distributed for all four variables.\n")
   })
+  
+  # The Model Page
+  
+  #### Live data on the web app model prediction page
+  live_data <- reactive({
+    df<- data.frame(
+      Sepal.Length = input$SLpoint,
+      Sepal.Width = input$SWpoint,
+      Petal.Length = input$PLpoint,
+      Petal.Width = input$PWpoint)
+    return(df)
+  })
+  # show live data
+  output$live_table <- renderTable({
+    live_data()
+  })
+  
+  lr_df <- reactive({
+    
+    if (input$Predict > 0) {
+    # Predict on the dataframe
+    lr_pred <- predict(lr_model, newdata = live_data(), type = "raw")
+    lr_prob <- predict(lr_model, newdata = live_data(), type = "prob")
+    
+    # Combine predictions and probabilities into a dataframe
+    result <- data.frame(
+      Prediction = as.character(lr_pred[1]),
+      Setosa_Prob = lr_prob[, "setosa"],
+      Versicolor_Prob = lr_prob[, "versicolor"],
+      Virginica_Prob = lr_prob[, "virginica"]
+      )
+    return(result)
+    } else {
+      click<- "Click on the Predict Button 🚀🏳"
+      return(click)
+    }
+  })
+  # Output the result dataframe
+  output$lr_table <- renderTable({
+    lr_df()
+  })
+  
+  
+  
+  output$contents <- renderPrint({
+    if (input$Predict > 0) { 
+      "Your Prediction is Now Ready 🤩😎"
+    } else {
+      "Server 🛰 is ready to predict"
+    }
+  })
+  
+  # Prediction results table
+  output$tabledata <- renderTable({
+    if (input$Predict > 0) { 
+      ###
+    }
+  })
+  
+  
+  
+  
+  rf_df <- reactive({
+    
+    if (input$Predict > 0) {
+      # Predict on the dataframe
+      rf_pred <- predict(rf_model, newdata = live_data(), type = "raw")
+      rf_prob <- predict(rf_model, newdata = live_data(), type = "prob")
+      
+      # Combine predictions and probabilities into a dataframe
+      result_rf <- data.frame(
+        Prediction = as.character(rf_pred[1]),
+        Setosa_Prob = rf_prob[, "setosa"],
+        Versicolor_Prob = rf_prob[, "versicolor"],
+        Virginica_Prob = rf_prob[, "virginica"]
+      )
+      return(result_rf)
+    } else {
+      click<- "Click on the Predict Button 🚀🏳"
+      return(click)
+    }
+  })
+  # Output the result dataframe
+  output$rf_table <- renderTable({
+    rf_df()
+  })
+  
+  output$contents <- renderPrint({
+    if (input$Predict > 0) { 
+      "Your Prediction is Now Ready 🤩😎"
+    } else {
+      "Server 🛰 is ready to predict"
+    }
+  })
+  
+  # Prediction results table
+  output$tabledata <- renderTable({
+    if (input$Predict > 0) { 
+      live_data()
+    }
+  })
+  
 }
 
 ## Shiny app function
