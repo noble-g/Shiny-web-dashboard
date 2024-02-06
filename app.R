@@ -20,8 +20,8 @@ library(bsicons)
 library(thematic)
 
 
-#Declare the themw of the dash
-#thematic()
+#Declare the theme of the plots to be the same with that of the web app
+thematic_on()
 
 ##Load The data
 #### By default, iris is in R
@@ -62,8 +62,13 @@ rf_pred <- predict(rf_model, newdata = live_data, type = "raw")
 #print(as.character(lr_pred[1]))
 #print(rf_pred)
 
-
-
+# Social media icons
+sm_icons<-  tags$div(
+    style = "position: fixed; bottom: 10px; right: 10px;",
+    tags$a(href = "https://github.com/noble-g", target = "_blank", bs_icon("github")),
+    tags$a(href = "https://www.linkedin.com/in/oloyede-abdulganiyu", target = "_blank", bs_icon("linkedin", class = "fa-3x")),
+    tags$a(href = "https://twitter.com/NobleGee6", target = "_blank", bs_icon("twitter"))
+  )
 
 ### UI Function
 ui <- fluidPage(theme = bs_theme(bootswatch = "darkly", 
@@ -71,13 +76,22 @@ ui <- fluidPage(theme = bs_theme(bootswatch = "darkly",
                                  primary = "#f3b433",
                                  secondary = "#e5e5e5",
                                  warning = "#33df89"),
+                
                 navbarPage("Iris Analysis", 
                            tabPanel("Iris Description", 
-                                    page_sidebar(sidebar=  sidebar(sliderInput("SLrange", "Sepal Length Range ", min = min(data$Sepal.Length), max = max(data$Sepal.Length), value = c(4.4,6.55) ),
+                                    page_sidebar(sidebar=  sidebar(tags$h2("NOBLE", 
+                                                                           style = "font-weight: bold; font-style: italic; text-align: center; color: #f3b433 ;"),
+                                                               sliderInput("SLrange", "Sepal Length Range ", min = min(data$Sepal.Length), max = max(data$Sepal.Length), value = c(4.4,6.55) ),
                                                                sliderInput("SWrange", "Sepal Width Range ", min = min(data$Sepal.Width), max = max(data$Sepal.Width), value = c(3,4) ),
                                                                sliderInput("PLrange", "Petal Length Range ", min = min(data$Petal.Length), max = max(data$Petal.Length), value = c(4,5) ),
                                                                sliderInput("PWrange", "Petal Width Range ", min = min(data$Petal.Width), max = max(data$Petal.Width), value = c(1,2) )
-                                    ),
+                                                              ),
+                                                 tags$style(HTML("
+                                                      .table-darkly {
+                                                                      color: white;
+                                                                      background:#e5e5e5 ;
+                                                      }
+                                        ")),
                                       h2(tags$b("About The Data")),
                                       h3("Description"),
                                       p("This famous (Fisher's or Anderson's) iris data set gives the measurements in centimeters of the variables sepal length 
@@ -87,11 +101,13 @@ ui <- fluidPage(theme = bs_theme(bootswatch = "darkly",
                                       tags$pre(verbatimTextOutput("data_structure")), ## to print the structure of the data
                                       p("iris is a data frame with 150 cases (rows) and 5 variables (columns) named Sepal.Length, Sepal.Width, Petal.Length, Petal.Width, and Species."),
                                       ## Data Table
-                                      DT::dataTableOutput("table"),
+                                      uiOutput("table", class = "table-darkly"),
+                    
                                       h3("References"),
                                       tags$ul("Fisher, R. A. (1936) The use of multiple measurements in taxonomic problems. Annals of Eugenics, 7, Part II, 179–188.", 
-                                              "The data were collected by Anderson, Edgar (1935). The irises of the Gaspe Peninsula, Bulletin of the American Iris Society, 59, 2–5.")
-                                    
+                                              "The data were collected by Anderson, Edgar (1935). The irises of the Gaspe Peninsula, Bulletin of the American Iris Society, 59, 2–5."),
+                                      # Social media icons
+                                      sm_icons
                                     )## close sidebar
                                     ), ## close tabpanel
                            tabPanel("Dashboard", 
@@ -101,16 +117,20 @@ ui <- fluidPage(theme = bs_theme(bootswatch = "darkly",
                                         layout_columns(
                                           value_box(title = "Sepal Length Mean", 
                                                     verbatimTextOutput("sepal_length_mean"),
-                                                    theme = "success"),
+                                                    theme = "success",
+                                                    showcase = bs_icon("align-end")),
                                           value_box(title = "Sepal Width Mean", 
                                                     verbatimTextOutput("sepal_width_mean"),
-                                                    theme = "secondary"),
+                                                    theme = "secondary",
+                                                    showcase = bs_icon("balloon-fill")),
                                           value_box(title = "Petal Length Mean", 
                                                     verbatimTextOutput("petal_length_mean"),
-                                                    theme = "primary"),
+                                                    theme = "primary",
+                                                    showcase = bs_icon("flower3")),
                                           value_box(title = "Petal Width Mean", 
                                                     verbatimTextOutput("petal_width_mean"),
-                                                    theme = "warning"),
+                                                    theme = "warning",
+                                                    showcase = bs_icon("flower1")),
                                         #### The Scatter Plots
                                           card(card_header("Sepal Length vs Sepal Width"), 
                                                plotOutput("scatter_plot_sepal")),
@@ -125,11 +145,15 @@ ui <- fluidPage(theme = bs_theme(bootswatch = "darkly",
                                         card(card_header("Report"), 
                                                          verbatimTextOutput("findings")),
                                         col_widths = c(3,3,3,3,6,6,4,8, 12),
-                                        row_heights = c(0.7, 3,3,3)
+                                        row_heights = c(0.7, 3,3,3),
+                                        # Social media icons
+                                        sm_icons
                                         )
                                     )),
                            tabPanel("Prediction", 
-                                    page_sidebar(sidebar = sidebar(sliderInput("SLpoint", "Sepal Length", min = min(data$Sepal.Length), max = max(data$Sepal.Length), value = 6.55),
+                                    page_sidebar(sidebar = sidebar(tags$h2("NOBLE", 
+                                                                           style = "font-weight: bold; font-style: italic; text-align: center; color: #f3b433 ;"),
+                                                              sliderInput("SLpoint", "Sepal Length", min = min(data$Sepal.Length), max = max(data$Sepal.Length), value = 6.55),
                                                                sliderInput("SWpoint", "Sepal Width", min = min(data$Sepal.Width), max = max(data$Sepal.Width), value = 4),
                                                                sliderInput("PLpoint", "Petal Length", min = min(data$Petal.Length), max = max(data$Petal.Length), value = 5),
                                                                sliderInput("PWpoint", "Petal Width", min = min(data$Petal.Width), max = max(data$Petal.Width), value = 2),
@@ -143,8 +167,10 @@ ui <- fluidPage(theme = bs_theme(bootswatch = "darkly",
                                       tableOutput("lr_table"),
                                       h3("Random Forest"),
                                       ## Model
-                                      tableOutput('rf_table') #Prediction of the result table
-                                    )),
+                                      tableOutput('rf_table'), #Prediction of the result table
+                                    # Social media icons
+                                    sm_icons
+                                     )),
                            tabPanel("Model Diagonistics",
                                     #page_fil("Evaluation and Diagonistis",
                                       layout_columns(
@@ -178,7 +204,9 @@ ui <- fluidPage(theme = bs_theme(bootswatch = "darkly",
                                         card(card_header()),
                                         card(),
                                         col_widths = c(12, 12,6,6,6,6,6,6,12, 12,6,6,6,6,6,6),
-                                        row_heights = c(0.7, 3,3,3)
+                                        row_heights = c(0.7, 3,3,3),
+                                        # Social media icons
+                                        sm_icons
                                       )
                                     )),
                 )
@@ -205,10 +233,10 @@ server <- function(input, output, session) {
     )
   })
   # Render the filtered data table
-  output$table <- renderDT({
-    datatable(filtered_data(), options = list(pageLength = 20))
+  output$table <- renderUI({
+    table <- DT::datatable(filtered_data(), options = list(pageLength = 20))
+    table
   })
-  
   ##### DASHBOARD
   # Calculate means for each variable
   output$sepal_length_mean <- renderText({
@@ -227,28 +255,35 @@ server <- function(input, output, session) {
   # Create scatter plot for Sepal Length vs Sepal Width
   output$scatter_plot_sepal <- renderPlot({
     ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species)) +
-      geom_point() +
-      labs(title = "Sepal Length vs Sepal Width")
+      geom_point(size = 4) +
+      theme(legend.position = "bottom")
   })
   # Create scatter plot for Petal Length vs Petal Width
   output$scatter_plot_petal <- renderPlot({
     ggplot(data, aes(x = Petal.Length, y = Petal.Width, color = Species)) +
-      geom_point() +
-      labs(title = "Petal Length vs Petal Width")
+      geom_point(size = 4)+
+      theme(legend.position = "bottom")
   })
   
   # Create correlation plot
   output$correlation_plot <- renderPlot({
-    corrplot(cor(data[, 1:4]))
+    cor_matrix<- cor(data[, 1:4])
+    #colors <- c("#95dc4e", "#f3b433", "#e5e5e5", "#33df89")
+    corrplot(cor_matrix, 
+             method = "square",
+             type = "full",
+             addCoef.col = "black")
   })
   
   # Create boxplot
   output$boxplot <- renderPlot({
+    colors <- c("#95dc4e", "#f3b433", "#e5e5e5", "#33df89")
     # Create a boxplot of all four numeric variables
     boxplot(data[, c("Sepal.Length", "Sepal.Width", "Petal.Length", "Petal.Width")],
             main = "Boxplot of Iris Dataset",
             xlab = "Variables",
-            ylab = "Measurement")
+            ylab = "Measurement", 
+            col = colors)
   })
   
   # Generate Report
@@ -307,15 +342,6 @@ server <- function(input, output, session) {
   })
   
   
-  
-  output$contents <- renderPrint({
-    if (input$Predict > 0) { 
-      "Your Prediction is Now Ready 🤩😎"
-    } else {
-      "Server 🛰 is ready to predict"
-    }
-  })
-  
   # Prediction results table
   output$tabledata <- renderTable({
     if (input$Predict > 0) { 
@@ -351,14 +377,6 @@ server <- function(input, output, session) {
     rf_df()
   })
   
-  output$contents <- renderPrint({
-    if (input$Predict > 0) { 
-      "Your Prediction is Now Ready 🤩😎"
-    } else {
-      "Server 🛰 is ready to predict"
-    }
-  })
-  
   # Prediction results table
   output$tabledata <- renderTable({
     if (input$Predict > 0) { 
@@ -379,9 +397,6 @@ shinyApp(ui = ui, server = server)
 ## Model Diagonistics
 ## AUC and ROC curve
 ## comparing the two models
-## Ensembling the two models
-## 
-##
 
 
 ### Deployment
